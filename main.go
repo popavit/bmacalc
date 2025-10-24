@@ -59,6 +59,13 @@ func calc_addr(basis basisType, mFunc modbusFunc, group string, channel string) 
 		switch mFunc {
 		case readCoil:
 		case readDiscreteInput:
+			// преобразуем строку канала в int, если успешно - расчитываем адрес
+			if iChannel, err := strconv.Atoi(channel); err == nil {
+				res = calc_addr_b14_f2(group, iChannel)
+			} else {
+				//если нет - ошибка
+				fmt.Println("Неверно введены параметры")
+			}
 		case readHoldingRegister:
 		case readInputRegister:
 		case writeSingleCoil:
@@ -69,7 +76,7 @@ func calc_addr(basis basisType, mFunc modbusFunc, group string, channel string) 
 		switch mFunc {
 		case readCoil:
 		case readDiscreteInput:
-			// преобразую строку канала в int, если успешно - расчитываем адрес
+			// преобразуем строку канала в int, если успешно - расчитываем адрес
 			if iChannel, err := strconv.Atoi(channel); err == nil {
 				res = calc_addr_b21_f2(group, iChannel)
 			} else {
@@ -79,7 +86,7 @@ func calc_addr(basis basisType, mFunc modbusFunc, group string, channel string) 
 		case readHoldingRegister:
 			res = calc_addr_b21_f3(group, channel)
 		case readInputRegister:
-			// преобразую строку канала в int, если успешно - расчитываем адрес
+			// преобразуем строку канала в int, если успешно - расчитываем адрес
 			if iChannel, err := strconv.Atoi(channel); err == nil {
 				res = calc_addr_b21_f4(group, iChannel)
 			} else {

@@ -63,7 +63,7 @@ func calc_addr_b21_f2(group string, channel int) (res int) {
 	}
 
 	// проверка наличия канала по группе в карте channels, а после расчет
-	if size, ok := channels[group]; ok && size <= channels[group] {
+	if size, ok := channels[group]; ok && size >= channel {
 		numOfBits := 8 // количество битов (для интервала) между адресами
 		channel--      // так как начинаем расчет с 0 адреса
 		// пример: группа I4 - startAddr = (h:0x0300|d:768)
@@ -148,12 +148,13 @@ func calc_addr_b21_f4(group string, channel int) (res int) {
 	startAddr := 0
 	switch group {
 	case "I1", "I2", "I3", "I4",
-		"I11", "I12", "I13", "I14", "I15",
-		"I21", "I22", "I23",
+		"I11", "I12", "I13", "I14",
+		"I15", "I21", "I22", "I23",
 		"I31", "I32", "I33":
 		// по индексу из списка выше расчитываем начальный адрес для группы
 		if i := slices.Index(orderChannelsI, group); i != -1 {
-			startAddr = i * 0x0020
+			interval := 0x0020 // интервал между группами
+			startAddr = i * interval
 		}
 	case "P":
 		startAddr = 0x2000
@@ -166,7 +167,7 @@ func calc_addr_b21_f4(group string, channel int) (res int) {
 
 	}
 	// проверка наличия канала по группе в карте channels, а после расчет
-	if ok := slices.Index(orderChannelsI, group); ok != -1 {
+	if slices.Contains(orderChannelsI, group) {
 		numOfWords := 2 // количество слов (для интервала) между адресами
 		channel--       // так как начинаем расчет с 0 адреса
 		res = startAddr + channel*numOfWords
