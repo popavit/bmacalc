@@ -2,6 +2,7 @@ package main
 
 import (
 	"slices"
+	"strconv"
 )
 
 func calc_addr_b21_f1() {}
@@ -12,6 +13,7 @@ func calc_addr_b21_f2(group string, channel int) (res int) {
 	// функция вернет -1
 	res = -1
 
+	// список каналов
 	// ключ - группа, значение - колличество каналов в группе.
 	channels := map[string]int{
 		"I1": 16, "I2": 16, "I3": 16,
@@ -63,13 +65,12 @@ func calc_addr_b21_f2(group string, channel int) (res int) {
 	}
 
 	// проверка наличия канала по группе в карте channels, а после расчет
-	if size, ok := channels[group]; ok && size >= channel {
+	if size, ok := channels[group]; ok && size >= channel && channel > 0 {
 		numOfBits := 8 // количество битов (для интервала) между адресами
-		channel--      // так как начинаем расчет с 0 адреса
 		// пример: группа I4 - startAddr = (h:0x0300|d:768)
 		// канал 8; получаем расчет:
 		// (0x0300|d:768) + (h:0x0040|d:8*8=64) = (h:0x0340|d:832)
-		res = startAddr + channel*numOfBits
+		res = finalCalc(startAddr, channel, numOfBits)
 	}
 
 	return
@@ -111,7 +112,7 @@ func calc_addr_b21_f3(group string, channel string) (res int) {
 	deviceTime := map[string]int{
 		"YEAR": 0xFF00, "MONTH": 0xFF01,
 		"DAY": 0xFF02, "HOUR": 0xFF03,
-		"MIN": 0xFF02, "SEC": 0xFF03,
+		"MIN": 0xFF04, "SEC": 0xFF05,
 	}
 
 	switch group {
@@ -121,20 +122,34 @@ func calc_addr_b21_f3(group string, channel string) (res int) {
 			// по выбраному контуру регулирования, параметру
 			// и промежутку между адресами считаем адрес
 			interval := 0x1000
-			res = controlLoop[channel] + i*interval
+			if addr, ok := controlLoop[channel]; ok {
+				res = addr + i*interval
+			}
 		}
 	case "TIME":
-		res = deviceTime[channel]
+		if addr, ok := deviceTime[channel]; ok {
+			res = addr
+		}
 	}
 
 	return
 }
 
-func calc_addr_b21_f4(group string, channel int) (res int) {
+func calc_addr_b21_f4(group string, channel string) (res int) {
 
 	// если вычислений не пройзойдет (неправильно указанные данные)
 	// функция вернет -1
 	res = -1
+
+	// список каналов
+	// ключ - группа, значение - колличество каналов в группе.
+	channels := map[string]int{
+		"I1": 16, "I2  ": 16, "I3": 16, "I4": 8,
+		"I11": 12, "I12": 12, "I13": 12, "I14": 12,
+		"I15": 12, "I21": 12, "I22": 12, "I23": 12,
+		"I31": 12, "I32": 12, "I33": 12,
+		"P": 24, "IB": 128, "OB": 128, "V1": 8, "V2": 8,
+	}
 
 	// список для расчетов (используются индексы)
 	orderChannelsI := []string{
@@ -144,6 +159,18 @@ func calc_addr_b21_f4(group string, channel int) (res int) {
 		"I31", "I32", "I33",
 		"P", "IB", "OB", "V1", "V2",
 	}
+
+	// карта с каналами исторических (суточных)
+	channelsHI := map[string]int{
+		"HI1": 8, "HI2": 8, "HI3": 8,
+		"HI11": 8, "HI12": 8, "HI13": 8,
+		"HI14": 8, "HI15": 8, "HP": 24,
+	}
+	// список для расчетов (используются индексы)
+	orderChannelsHI := []string{
+		"HI1", "HI2", "HI3",
+		"HI11", "HI12", "HI13",
+		"HI14", "HI15", "HP"}
 
 	startAddr := 0
 	switch group {
@@ -156,21 +183,58 @@ func calc_addr_b21_f4(group string, channel int) (res int) {
 			interval := 0x0020 // интервал между группами
 			startAddr = i * interval
 		}
-	case "P":
-		startAddr = 0x2000
-	case "IB", "OB":
-		startAddr = 0x3000
 	case "V1":
 		startAddr = 0x1000
 	case "V2":
 		startAddr = 0x1010
+	case "P":
+		startAddr = 0x2000
+	case "IB", "OB":
+		startAddr = 0x3000
+	case "HI1", "HI2", "HI3",
+		"HI11", "HI12", "HI13",
+		"HI14", "HI15", "HP":
+		if i := slices.Index(orderChannelsHI, group); i != -1 {
+			interval := 0x0480 // интервал между группами
+			startAddr = 0xA000 + i*interval
+		}
 
 	}
-	// проверка наличия канала по группе в карте channels, а после расчет
-	if slices.Contains(orderChannelsI, group) {
-		numOfWords := 2 // количество слов (для интервала) между адресами
-		channel--       // так как начинаем расчет с 0 адреса
-		res = startAddr + channel*numOfWords
+	// проверка наличия канала по группе в списку каналов, а после расчет
+	if intChannel, err := strconv.Atoi(channel); err == nil {
+		if size, ok := channels[group]; ok && size >= intChannel && intChannel > 0 {
+			numOfWords := 2 // количество слов (для интервала между адресами)
+
+			res = finalCalc(startAddr, intChannel, numOfWords)
+			// если нет, но есть в списке исторических каналов
+		}
+
+	} else if size, ok := channelsHI[group]; ok { // если данные часовые
+		// пересчитываем канал
+		intChannel, err = strconv.Atoi(channel[:1])
+		if err != nil {
+			return
+		}
+		//считываем нужный час
+
+		hour, err := strconv.Atoi(channel[2:])
+		if err != nil {
+			return
+		}
+		// в зависимости от дня добавляем к startAddr
+		switch channel[1] {
+		case 't':
+			startAddr += 0
+		case 'y':
+			startAddr += 0x0030
+		case 'b':
+			startAddr += 0x0060
+		}
+
+		if size >= intChannel && intChannel > 0 && hour >= 0 && hour < 24 {
+			res = finalCalc(startAddr, intChannel, 0x0090) + hour*2
+		}
+
 	}
 
 	return

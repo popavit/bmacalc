@@ -29,18 +29,43 @@ const (
 
 func main() {
 	var (
-		b  basisType
-		f  modbusFunc
-		gr string
-		ch string
+		b basisType  = "b21"
+		f modbusFunc = "f4"
+		// gr string     = ""
+		// ch string     = ""
 	)
-	fmt.Scanf("%s %s %s %s", &b, &f, &gr, &ch)
 
-	if addr := calc_addr(b, f, gr, ch); addr != -1 {
-		fmt.Printf("dec: %d, hex: %X\n", addr, addr)
-	} else {
-		fmt.Println("Неверно введены параметры")
+	// aaa := []string{"HI1", "HI2", "HI3",
+	// 	"HI11", "HI12", "HI13",
+	// 	"HI14", "HI15"}
+
+	aaa := []string{"HP"}
+
+	for _, v := range aaa {
+
+		for _, xx := range funcTestet("t") {
+			if addr := calc_addr(b, f, v, xx); addr != -1 {
+				fmt.Printf("dec: %d, hex: %X, %s, %s\n", addr, addr, v, xx)
+			} else {
+				fmt.Printf("Неверно введены параметры %s %s \n", v, xx)
+			}
+		}
+
 	}
+	// fmt.Scanf("%s %s %s %s", &b, &f, &gr, &ch)
+
+}
+
+func funcTestet(t string) []string {
+	bbb := []string{}
+
+	for j := 1; j < 25; j++ {
+		for i := 0; i < 24; i++ {
+			bbb = append(bbb, fmt.Sprintf("%d%s%d", j, t, i))
+		}
+	}
+
+	return bbb
 }
 
 func calc_addr(basis basisType, mFunc modbusFunc, group string, channel string) (res int) {
@@ -64,10 +89,17 @@ func calc_addr(basis basisType, mFunc modbusFunc, group string, channel string) 
 				res = calc_addr_b14_f2(group, iChannel)
 			} else {
 				//если нет - ошибка
-				fmt.Println("Неверно введены параметры")
+				return -1
 			}
 		case readHoldingRegister:
+			res = calc_addr_b14_f3(group, channel)
 		case readInputRegister:
+			if iChannel, err := strconv.Atoi(channel); err == nil {
+				res = calc_addr_b14_f4(group, iChannel)
+			} else {
+				//если нет - ошибка
+				return -1
+			}
 		case writeSingleCoil:
 		case writeSingleRegister:
 		case writeMultipleRegister:
@@ -81,18 +113,13 @@ func calc_addr(basis basisType, mFunc modbusFunc, group string, channel string) 
 				res = calc_addr_b21_f2(group, iChannel)
 			} else {
 				//если нет - ошибка
-				fmt.Println("Неверно введены параметры")
+				return -1
 			}
 		case readHoldingRegister:
 			res = calc_addr_b21_f3(group, channel)
 		case readInputRegister:
 			// преобразуем строку канала в int, если успешно - расчитываем адрес
-			if iChannel, err := strconv.Atoi(channel); err == nil {
-				res = calc_addr_b21_f4(group, iChannel)
-			} else {
-				//если нет - ошибка
-				fmt.Println("Неверно введены параметры")
-			}
+			res = calc_addr_b21_f4(group, channel)
 		case writeSingleCoil:
 		case writeSingleRegister:
 		case writeMultipleRegister:
