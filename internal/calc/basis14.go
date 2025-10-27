@@ -1,0 +1,215 @@
+package calc
+
+import (
+	"fmt"
+	"slices"
+	"strconv"
+)
+
+type Basis14 struct {
+}
+
+// CalcAddr расчитывает Modbus адрес устройства в
+// зависимости от выбранной функции, группы и канала(названия параметра)
+//   - readCoil              = "f1"
+//   - readDiscreteInput     = "f2"
+//   - readHoldingRegister   = "f3"
+//   - readInputRegister     = "f4"
+//   - writeSingleCoil       = "f5"
+//   - writeSingleRegister   = "f6"
+//   - writeMultipleRegister = "f16"
+func (b *Basis14) CalcAddr(modbusFunc, group, channel string) (int, error) {
+	return CalcAddr(b, modbusFunc, group, channel)
+}
+
+func (b *Basis14) readCoil(group, channel string) (int, error) {
+	return -1, fmt.Errorf("функция не реализована")
+}
+
+func (b *Basis14) readDiscreteInput(group, channel string) (res int, err error) {
+	channels := map[string]int{
+		"I": 8, "F1": 1, "F2": 1,
+		"DI": 8, "EI": 12, "B": 8,
+		"P": 16, "W": 64,
+	}
+
+	// выбираем стартовый адрес
+	startAddr := 0
+	switch group {
+	// входные аналоговые значения
+	case "I":
+		startAddr = 0
+		// кнопка Ф1 и Ф2, чтобы это не значило
+	case "F1":
+		startAddr = 0x0100
+	case "F2":
+		startAddr = 0x0110
+		// собственные дискретные входа
+	case "DI":
+		startAddr = 0x0200
+		// входные каналы на шине расширения
+	case "EI":
+		startAddr = 0x0300
+		// расчетные каналы
+	case "P":
+		startAddr = 0x0400
+		// внешние каналы
+	case "B":
+		startAddr = 0x0500
+		// выходные каналы
+	case "W":
+		startAddr = 0x0600
+	default:
+		return 0, fmt.Errorf("неверно введена группа %q", group)
+	}
+
+	iChannel, e := strconv.Atoi(channel)
+	if e != nil {
+		return 0, fmt.Errorf("неверно введен канал %q", channel)
+	}
+
+	// проверка наличия канала по всем группам, а после расчет
+	switch group {
+	case "I", "DI", "EI", "B", "P", "F1", "F2", "W":
+		if size, ok := channels[group]; ok && size >= iChannel {
+			numOfBits := 16 // количество битов (для интервала) между адресами
+			// так как начинаем расчет с 0 адреса
+			// пример: группа I4 - startAddr = (h:0x0300|d:768)
+			// канал 8; получаем расчет:
+			// (0x0300|d:768) + (h:0x0040|d:8*8=64) = (h:0x0340|d:832)
+			res = finalCalc(startAddr, iChannel, numOfBits)
+		}
+	default:
+		return 0, fmt.Errorf("неверно введена группа %q", group)
+	}
+	return res, nil
+
+}
+
+func (b *Basis14) readHoldingRegister(group, channel string) (res int, err error) {
+	// список адресов для контура регулирования
+	controlLoop := map[string]int{
+		"ctrlMod":    0x0000,
+		"ctrlConfig": 0x0001,
+		"coefGroup":  0x0002,
+		"specAlgNum": 0x0003,
+		"setpoint":   0x0100,
+		"valveValue": 0x0102,
+		"Ko":         0x0104,
+		"Kp":         0x0106,
+		"Ti":         0x0108,
+		"Td":         0x010A,
+		"Tf":         0x010C,
+		"specq":      0x010E,
+		"specD":      0x0120,
+	}
+
+	// список адресов для чтения адресов
+	deviceTime := map[string]int{
+		"YEAR": 0xFF00, "MONTH": 0xFF01,
+		"DAY": 0xFF02, "HOUR": 0xFF03,
+		"MIN": 0xFF04, "SEC": 0xFF05,
+	}
+
+	// список каналов
+	// ключ - группа, значение - колличество каналов в группе.
+	channels := map[string]int{
+		"P": 16, "HI": 8, "HEXT": 8, "HP": 16, "HB": 8,
+	}
+
+	startAddr := 0
+	// задаем стартовый канал; в случае времени, основного
+	// и внешнего контуров - возвращаем значение сразу
+	switch group {
+	case "CLM":
+		if addr, ok := controlLoop[channel]; ok {
+			return addr, nil
+		}
+	case "CLEXT":
+		// Во внешнем контуре нет режима работы и спец. алгоритмов
+		if slices.Contains([]string{"ctrlMod", "specq", "specD"}, channel) {
+			return 0, fmt.Errorf("во внешнем контуре нет параметра %q", channel)
+		}
+		if addr, ok := controlLoop[channel]; ok {
+			shift := 0x1000 // смещение по адресу для внешнего контура
+			addr += shift
+			return addr, nil
+		}
+
+	case "P":
+		startAddr = 0x8000
+	case "HI":
+		startAddr = 0x9000
+	case "HP":
+		startAddr = 0x9010
+	case "HB":
+		startAddr = 0x9020
+	case "TIME":
+		return deviceTime[channel], nil
+	default:
+		return 0, fmt.Errorf("неверно введена группа %q", group)
+	}
+
+	// преобразуем строку channel в int, так как далее будем смотреть
+	//
+	if iChannel, e := strconv.Atoi(channel); e == nil {
+		if size, ok := channels[group]; ok && size >= iChannel && iChannel > 0 {
+			numOfWords := 2 // количество слов (для интервала между адресами)
+			res = finalCalc(startAddr, iChannel, numOfWords)
+		} else {
+			return 0, fmt.Errorf("неверно введена группа и/или канал")
+		}
+	} else {
+		return 0, fmt.Errorf("не удалось преобразовать канал %q в int", channel)
+	}
+
+	return res, nil
+}
+
+func (b *Basis14) readInputRegister(group, channel string) (res int, err error) {
+	channels := map[string]int{
+		"I": 8, "EXT": 8, "P": 16, "B": 8,
+	}
+
+	startAddr := 0
+	switch group {
+	case "I":
+		startAddr = 0
+	case "EXT":
+		startAddr = 0x0100
+	case "P":
+		startAddr = 0x0200
+	case "B":
+		startAddr = 0x0300
+	default:
+		return 0, fmt.Errorf("неверно введена группа %q", group)
+	}
+
+	iChannel, e := strconv.Atoi(channel)
+	if e != nil {
+		return 0, fmt.Errorf("не удается преобразовать канал %q в int", channel)
+	}
+
+	// проверка наличия канала по группе в карте channels,
+	// не выходит ли за пределы каналов и, после, расчет
+	if size, ok := channels[group]; ok && size >= iChannel && iChannel > 0 {
+		numOfWords := 2 // количество слов (для интервала между адресами)
+		res = finalCalc(startAddr, iChannel, numOfWords)
+	} else {
+		return 0, fmt.Errorf("неверно введена группа %q", group)
+	}
+
+	return res, nil
+}
+
+func (b *Basis14) writeSingleCoil(group, channel string) (int, error) {
+	return -1, fmt.Errorf("функция не реализована")
+}
+
+func (b *Basis14) writeSingleRegister(group, channel string) (int, error) {
+	return -1, fmt.Errorf("функция не реализована")
+}
+
+func (b *Basis14) writeMultipleRegister(group, channel string) (int, error) {
+	return -1, fmt.Errorf("функция не реализована")
+}
