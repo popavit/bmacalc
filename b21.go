@@ -1,6 +1,7 @@
 package main
 
 import (
+	"regexp"
 	"slices"
 	"strconv"
 )
@@ -210,29 +211,36 @@ func calc_addr_b21_f4(group string, channel string) (res int) {
 		}
 
 	} else if size, ok := channelsHI[group]; ok { // если данные часовые
-		// пересчитываем канал
-		intChannel, err = strconv.Atoi(channel[:1])
-		if err != nil {
-			return
-		}
-		//считываем нужный час
 
-		hour, err := strconv.Atoi(channel[2:])
-		if err != nil {
-			return
-		}
-		// в зависимости от дня добавляем к startAddr
-		switch channel[1] {
-		case 't':
-			startAddr += 0
-		case 'y':
-			startAddr += 0x0030
-		case 'b':
-			startAddr += 0x0060
-		}
+		// вычисляем канал, день и час
+		re := regexp.MustCompile(`^(\d+)([tyb])(\d{1,2})$`)
+		matches := re.FindStringSubmatch(channel)
 
-		if size >= intChannel && intChannel > 0 && hour >= 0 && hour < 24 {
-			res = finalCalc(startAddr, intChannel, 0x0090) + hour*2
+		if len(matches) == 4 {
+			intChannel, err = strconv.Atoi(matches[1])
+			if err != nil {
+				return
+			}
+
+			hour, err := strconv.Atoi(matches[3])
+			if err != nil {
+				return
+			}
+
+			day := matches[2]
+			// в зависимости от дня добавляем к startAddr
+			switch day {
+			case "t":
+				startAddr += 0
+			case "y":
+				startAddr += 0x0030
+			case "b":
+				startAddr += 0x0060
+			}
+
+			if size >= intChannel && intChannel > 0 && hour >= 0 && hour < 24 {
+				res = finalCalc(startAddr, intChannel, 0x0090) + hour*2
+			}
 		}
 
 	}
