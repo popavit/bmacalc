@@ -27,8 +27,8 @@ func (b *Basis14) readCoil(group, channel string) (int, error) {
 
 func (b *Basis14) readDiscreteInput(group, channel string) (res int, err error) {
 	channels := map[string]int{
-		"I": 8, "F1": 1, "F2": 1,
-		"DI": 8, "EI": 12, "B": 8,
+		"I": 8, "F": 2,
+		"DI": 8, "EXTI": 12, "B": 8,
 		"P": 16, "W": 64,
 	}
 
@@ -39,15 +39,12 @@ func (b *Basis14) readDiscreteInput(group, channel string) (res int, err error) 
 	case "I":
 		startAddr = 0
 		// кнопка Ф1 и Ф2, чтобы это не значило
-	case "F1":
+	case "F":
 		startAddr = 0x0100
-	case "F2":
-		startAddr = 0x0110
-		// собственные дискретные входа
 	case "DI":
 		startAddr = 0x0200
 		// входные каналы на шине расширения
-	case "EI":
+	case "EXTI":
 		startAddr = 0x0300
 		// расчетные каналы
 	case "P":
@@ -62,14 +59,16 @@ func (b *Basis14) readDiscreteInput(group, channel string) (res int, err error) 
 		return 0, fmt.Errorf("неверно введена группа: %q", group)
 	}
 
+	// преобразуем строку канала в int и проверяем
 	iChannel, e := strconv.Atoi(channel)
-	if e != nil {
-		return 0, fmt.Errorf("неверно введен канал: %q", channel)
+	// проверяем на ошибку и на то, что каналы не отрицательные
+	if e != nil || iChannel < 0 {
+		return 0, fmt.Errorf("не удается преобразовать строку канала (%q) в int", channel)
 	}
 
 	// проверка наличия канала по всем группам, а после расчет
 	switch group {
-	case "I", "DI", "EI", "B", "P", "F1", "F2", "W":
+	case "I", "DI", "EXTI", "B", "P", "F", "W":
 		if size, ok := channels[group]; ok && size >= iChannel {
 			numOfBits := 16 // количество битов (для интервала) между адресами
 			// так как начинаем расчет с 0 адреса
@@ -77,12 +76,13 @@ func (b *Basis14) readDiscreteInput(group, channel string) (res int, err error) 
 			// канал 8; получаем расчет:
 			// (0x0300|d:768) + (h:0x0040|d:8*8=64) = (h:0x0340|d:832)
 			res = finalCalc(startAddr, iChannel, numOfBits)
+		} else {
+			return 0, fmt.Errorf("неверно введен канал: %q", channel)
 		}
 	default:
 		return 0, fmt.Errorf("неверно введена группа: %q", group)
 	}
 	return res, nil
-
 }
 
 func (b *Basis14) readHoldingRegister(group, channel string) (res int, err error) {
@@ -139,10 +139,12 @@ func (b *Basis14) readHoldingRegister(group, channel string) (res int, err error
 		startAddr = 0x8000
 	case "HI":
 		startAddr = 0x9000
-	case "HP":
+	case "HEXT":
 		startAddr = 0x9010
-	case "HB":
+	case "HP":
 		startAddr = 0x9020
+	case "HB":
+		startAddr = 0x9040
 	case "TIME":
 		if addr, ok := deviceTime[channel]; ok {
 			return addr, nil
@@ -153,10 +155,11 @@ func (b *Basis14) readHoldingRegister(group, channel string) (res int, err error
 		return 0, fmt.Errorf("неверно введена группа: %q", group)
 	}
 
-	// преобразуем строку channel в int, так как далее будем смотреть
-	//
-	if iChannel, e := strconv.Atoi(channel); e == nil {
-		if size, ok := channels[group]; ok && size >= iChannel && iChannel > 0 {
+	// преобразуем строку channel в int
+	// проверяем на ошибку и на то, что каналы не отрицательные
+	if iChannel, e := strconv.Atoi(channel); e == nil && iChannel > 0 {
+		// проверяем на наличие группы и размер группы
+		if size, ok := channels[group]; ok && size >= iChannel {
 			numOfWords := 2 // количество слов (для интервала между адресами)
 			res = finalCalc(startAddr, iChannel, numOfWords)
 		} else {
@@ -188,18 +191,20 @@ func (b *Basis14) readInputRegister(group, channel string) (res int, err error) 
 		return 0, fmt.Errorf("неверно введена группа: %q", group)
 	}
 
+	// преобразуем строку канала в int
 	iChannel, e := strconv.Atoi(channel)
-	if e != nil {
+	// проверяем на ошибку и на то, что каналы не отрицательные
+	if e != nil || iChannel < 0 {
 		return 0, fmt.Errorf("не удается преобразовать строку канала (%q) в int", channel)
 	}
 
 	// проверка наличия канала по группе в карте channels,
 	// не выходит ли за пределы каналов и, после, расчет
-	if size, ok := channels[group]; ok && size >= iChannel && iChannel > 0 {
+	if size, ok := channels[group]; ok && size >= iChannel {
 		numOfWords := 2 // количество слов (для интервала между адресами)
 		res = finalCalc(startAddr, iChannel, numOfWords)
 	} else {
-		return 0, fmt.Errorf("неверно введена группа: %q", group)
+		return 0, fmt.Errorf("неверно введен канал: %q", channel)
 	}
 
 	return res, nil

@@ -83,8 +83,9 @@ func (b *Basis21) readDiscreteInput(group, channel string) (res int, err error) 
 
 	// преобразуем строку channels в int
 	iChannel, err := strconv.Atoi(channel)
-	if err != nil {
-		return 0, fmt.Errorf("неверно введен канал: %q", channel)
+	// проверяем на ошибку и, что канал не отрицательный
+	if err != nil || iChannel < 0 {
+		return 0, fmt.Errorf("не удается преобразовать строку канала (%q) в int или отрицательное значение", channel)
 	}
 	// проверка наличия канала по группе в карте channels, а после расчет
 	if size, ok := channels[group]; ok && size >= iChannel && iChannel > 0 {
@@ -165,7 +166,7 @@ func (b *Basis21) readHoldingRegister(group, channel string) (res int, err error
 				return 0, fmt.Errorf("канал %q вне диапазона", channel)
 			}
 		} else {
-			return 0, fmt.Errorf("неверно указан канал %q", channel)
+			return 0, fmt.Errorf("не удается преобразовать строку канала (%q) в int", channel)
 		}
 	default:
 		return 0, fmt.Errorf("неверно введена группа: %q", group)
@@ -256,12 +257,12 @@ func (b *Basis21) readInputRegister(group, channel string) (res int, err error) 
 		if len(matches) == 4 {
 			intChannel, err = strconv.Atoi(matches[1])
 			if err != nil {
-				return 0, fmt.Errorf("в строке параметра %q неверно указан канал", channel)
+				return 0, fmt.Errorf("в строке параметра (%q) неверно указан канал", channel)
 			}
 
 			hour, e := strconv.Atoi(matches[3])
 			if e != nil {
-				return 0, fmt.Errorf("в строке параметра %q неверно указаны часы", channel)
+				return 0, fmt.Errorf("в строке параметра (%q) неверно указаны часы", channel)
 			}
 
 			day := matches[2]
@@ -274,21 +275,21 @@ func (b *Basis21) readInputRegister(group, channel string) (res int, err error) 
 			case "b":
 				startAddr += 0x0060
 			default:
-				return 0, fmt.Errorf("в строке параметра %q неверно указан день", channel)
+				return 0, fmt.Errorf("в строке параметра (%q) неверно указан день", channel)
 			}
 
 			// если часы
 			if size >= intChannel && intChannel > 0 && hour >= 0 && hour < 24 {
 				res = finalCalc(startAddr, intChannel, 0x0090) + hour*2
 			} else {
-				return 0, fmt.Errorf("неверно указан параметр %q", channel)
+				return 0, fmt.Errorf("неверно указан параметр: %q", channel)
 			}
 		} else {
-			return 0, fmt.Errorf("неверно указан параметр %q", channel)
+			return 0, fmt.Errorf("неверно указан параметр: %q", channel)
 		}
 
 	} else {
-		return 0, fmt.Errorf("не удалось вычислить канал %q или неверно указана группа %q ", channel, group)
+		return 0, fmt.Errorf("не удалось вычислить канал (%q) или неверно указана группа (%q)", channel, group)
 	}
 
 	return res, nil

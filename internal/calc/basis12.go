@@ -87,7 +87,9 @@ func (b *Basis12) readHoldingRegister(group, channel string) (res int, err error
 		}
 	case "CLEXT":
 		// во внешнем контуре нет режима работы и спец. алгоритмов
-		if slices.Contains([]string{"ctrlMod", "specq", "specD"}, channel) {
+		if slices.Contains([]string{"ctrlMod", "specq", "specD1",
+			"specD2", "specKo", "specKp",
+			"specTi", "Td"}, channel) {
 			return 0, fmt.Errorf("во внешнем контуре нет параметра %q", channel)
 		}
 
