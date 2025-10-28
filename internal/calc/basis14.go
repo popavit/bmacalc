@@ -6,8 +6,7 @@ import (
 	"strconv"
 )
 
-type Basis14 struct {
-}
+type Basis14 struct{}
 
 // CalcAddr расчитывает Modbus адрес устройства в
 // зависимости от выбранной функции, группы и канала(названия параметра)
@@ -60,12 +59,12 @@ func (b *Basis14) readDiscreteInput(group, channel string) (res int, err error) 
 	case "W":
 		startAddr = 0x0600
 	default:
-		return 0, fmt.Errorf("неверно введена группа %q", group)
+		return 0, fmt.Errorf("неверно введена группа: %q", group)
 	}
 
 	iChannel, e := strconv.Atoi(channel)
 	if e != nil {
-		return 0, fmt.Errorf("неверно введен канал %q", channel)
+		return 0, fmt.Errorf("неверно введен канал: %q", channel)
 	}
 
 	// проверка наличия канала по всем группам, а после расчет
@@ -80,7 +79,7 @@ func (b *Basis14) readDiscreteInput(group, channel string) (res int, err error) 
 			res = finalCalc(startAddr, iChannel, numOfBits)
 		}
 	default:
-		return 0, fmt.Errorf("неверно введена группа %q", group)
+		return 0, fmt.Errorf("неверно введена группа: %q", group)
 	}
 	return res, nil
 
@@ -101,7 +100,7 @@ func (b *Basis14) readHoldingRegister(group, channel string) (res int, err error
 		"Td":         0x010A,
 		"Tf":         0x010C,
 		"specq":      0x010E,
-		"specD":      0x0120,
+		"specD":      0x0110,
 	}
 
 	// список адресов для чтения адресов
@@ -148,10 +147,10 @@ func (b *Basis14) readHoldingRegister(group, channel string) (res int, err error
 		if addr, ok := deviceTime[channel]; ok {
 			return addr, nil
 		} else {
-			return 0, fmt.Errorf("неверно введен параметр %q", channel)
+			return 0, fmt.Errorf("неверно введен параметр: %q", channel)
 		}
 	default:
-		return 0, fmt.Errorf("неверно введена группа %q", group)
+		return 0, fmt.Errorf("неверно введена группа: %q", group)
 	}
 
 	// преобразуем строку channel в int, так как далее будем смотреть
@@ -161,10 +160,10 @@ func (b *Basis14) readHoldingRegister(group, channel string) (res int, err error
 			numOfWords := 2 // количество слов (для интервала между адресами)
 			res = finalCalc(startAddr, iChannel, numOfWords)
 		} else {
-			return 0, fmt.Errorf("неверно введена группа и/или канал")
+			return 0, fmt.Errorf("неверно введена группа и/или канал: %q", channel)
 		}
 	} else {
-		return 0, fmt.Errorf("не удалось преобразовать канал %q в int", channel)
+		return 0, fmt.Errorf("не удалось преобразовать строку канала (%q) в int", channel)
 	}
 
 	return res, nil
@@ -186,12 +185,12 @@ func (b *Basis14) readInputRegister(group, channel string) (res int, err error) 
 	case "B":
 		startAddr = 0x0300
 	default:
-		return 0, fmt.Errorf("неверно введена группа %q", group)
+		return 0, fmt.Errorf("неверно введена группа: %q", group)
 	}
 
 	iChannel, e := strconv.Atoi(channel)
 	if e != nil {
-		return 0, fmt.Errorf("не удается преобразовать канал %q в int", channel)
+		return 0, fmt.Errorf("не удается преобразовать строку канала (%q) в int", channel)
 	}
 
 	// проверка наличия канала по группе в карте channels,
@@ -200,7 +199,7 @@ func (b *Basis14) readInputRegister(group, channel string) (res int, err error) 
 		numOfWords := 2 // количество слов (для интервала между адресами)
 		res = finalCalc(startAddr, iChannel, numOfWords)
 	} else {
-		return 0, fmt.Errorf("неверно введена группа %q", group)
+		return 0, fmt.Errorf("неверно введена группа: %q", group)
 	}
 
 	return res, nil

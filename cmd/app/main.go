@@ -15,7 +15,11 @@ func main() {
 
 	fmt.Scanf("%s %s %s %s", &b, &f, &gr, &ch)
 
-	device, _ := calc.NewBasis(b)
+	device, err := calc.NewBasis(b)
+	if err != nil {
+		panic(err)
+	}
+
 	if addr, err := device.CalcAddr(f, gr, ch); err == nil {
 		fmt.Printf("hex: %X, dec: %d\n", addr, addr)
 	} else {
