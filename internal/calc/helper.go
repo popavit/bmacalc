@@ -20,7 +20,7 @@ func finalCalc(startAddr int, channel int, interval int) (res int) {
 
 }
 
-// CalcAddr расчитывает Modbus адрес устройства в
+// CalcAddr (конструкция) расчитывает Modbus адрес устройства в
 // зависимости от выбранной функции, группы и канала(названия параметра)
 //   - readCoil              = "f1"
 //   - readDiscreteInput     = "f2"
@@ -44,8 +44,8 @@ func CalcAddr(b Basis, modbusFunc, group, channel string) (int, error) {
 		return b.writeSingleCoil(group, channel)
 	case "f6":
 		return b.writeSingleRegister(group, channel)
-	case "f16":
-		return b.writeMultipleRegister(group, channel)
+	// case "f16":
+	// 	return b.writeMultipleRegister(group, channel)
 	default:
 		return -1, fmt.Errorf("неизвестная функция: %q", modbusFunc)
 	}
