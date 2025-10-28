@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-type Basis14 struct{}
+type BasisPV struct{}
 
 // CalcAddr расчитывает Modbus адрес устройства в
 // зависимости от выбранной функции, группы и канала(названия параметра)
@@ -17,19 +17,18 @@ type Basis14 struct{}
 //   - writeSingleCoil       = "f5"
 //   - writeSingleRegister   = "f6"
 //   - writeMultipleRegister = "f16"
-func (b *Basis14) CalcAddr(modbusFunc, group, channel string) (int, error) {
+func (b *BasisPV) CalcAddr(modbusFunc, group, channel string) (int, error) {
 	return CalcAddr(b, modbusFunc, group, channel)
 }
 
-func (b *Basis14) readCoil(group, channel string) (int, error) {
-	return -1, fmt.Errorf("функция не реализована")
+func (b *BasisPV) readCoil(group, channel string) (int, error) {
+	return 0, fmt.Errorf("пока не реализивано")
 }
 
-func (b *Basis14) readDiscreteInput(group, channel string) (res int, err error) {
+func (b *BasisPV) readDiscreteInput(group, channel string) (res int, err error) {
 	channels := map[string]int{
-		"I": 8, "F": 2,
-		"DI": 8, "EXTI": 12, "B": 8,
-		"P": 16, "W": 64,
+		"I": 4, "F": 2,
+		"B": 8, "P": 16, "W": 64,
 	}
 
 	// выбираем стартовый адрес
@@ -41,11 +40,6 @@ func (b *Basis14) readDiscreteInput(group, channel string) (res int, err error) 
 		// кнопка Ф1 и Ф2, чтобы это не значило
 	case "F":
 		startAddr = 0x0100
-	case "DI":
-		startAddr = 0x0200
-		// входные каналы на шине расширения
-	case "EXTI":
-		startAddr = 0x0300
 		// расчетные каналы
 	case "P":
 		startAddr = 0x0400
@@ -59,16 +53,16 @@ func (b *Basis14) readDiscreteInput(group, channel string) (res int, err error) 
 		return 0, fmt.Errorf("неверно введена группа: %q", group)
 	}
 
-	// преобразуем строку канала в int и проверяем
+	// преобразуем строку канала в int
 	iChannel, e := strconv.Atoi(channel)
 	// проверяем на ошибку и на то, что каналы не отрицательные
-	if e != nil || iChannel < 0 {
-		return 0, fmt.Errorf("не удается преобразовать строку канала (%q) в int", channel)
+	if e != nil && iChannel > 0 {
+		return 0, fmt.Errorf("неверно введен канал: %q", channel)
 	}
 
 	// проверка наличия канала по всем группам, а после расчет
 	switch group {
-	case "I", "DI", "EXTI", "B", "P", "F", "W":
+	case "I", "DI", "EI", "B", "P", "F", "W":
 		if size, ok := channels[group]; ok && size >= iChannel {
 			numOfBits := 16 // количество битов (для интервала) между адресами
 			// так как начинаем расчет с 0 адреса
@@ -85,7 +79,7 @@ func (b *Basis14) readDiscreteInput(group, channel string) (res int, err error) 
 	return res, nil
 }
 
-func (b *Basis14) readHoldingRegister(group, channel string) (res int, err error) {
+func (b *BasisPV) readHoldingRegister(group, channel string) (res int, err error) {
 	// список адресов для контура регулирования
 	controlLoop := map[string]int{
 		"ctrlMod":    0x0000,
@@ -113,7 +107,7 @@ func (b *Basis14) readHoldingRegister(group, channel string) (res int, err error
 	// список каналов
 	// ключ - группа, значение - колличество каналов в группе.
 	channels := map[string]int{
-		"P": 16, "HI": 8, "HEXT": 8, "HP": 16, "HB": 8,
+		"P": 16, "HI": 4, "HP": 16, "HB": 8,
 	}
 
 	startAddr := 0
@@ -139,8 +133,6 @@ func (b *Basis14) readHoldingRegister(group, channel string) (res int, err error
 		startAddr = 0x8000
 	case "HI":
 		startAddr = 0x9000
-	case "HEXT":
-		startAddr = 0x9010
 	case "HP":
 		startAddr = 0x9020
 	case "HB":
@@ -163,7 +155,7 @@ func (b *Basis14) readHoldingRegister(group, channel string) (res int, err error
 			numOfWords := 2 // количество слов (для интервала между адресами)
 			res = finalCalc(startAddr, iChannel, numOfWords)
 		} else {
-			return 0, fmt.Errorf("неверно введен канал: %q", channel)
+			return 0, fmt.Errorf("неверно введен канал (%q)", channel)
 		}
 	} else {
 		return 0, fmt.Errorf("не удалось преобразовать строку канала (%q) в int или отрицательный канал", channel)
@@ -172,52 +164,35 @@ func (b *Basis14) readHoldingRegister(group, channel string) (res int, err error
 	return res, nil
 }
 
-func (b *Basis14) readInputRegister(group, channel string) (res int, err error) {
-	channels := map[string]int{
-		"I": 8, "EXT": 8, "P": 16, "B": 8,
+func (b *BasisPV) readInputRegister(group, channel string) (res int, err error) {
+	// карта с ключем - группа, значения
+	channels := map[string]map[string]int{
+		"I": {"1": 0x0, "2": 0x2, "3": 0x4, "4": 0x6},
+		"P": {"1": 0x200, "2": 0x202, "3": 0x204, "4": 0x206,
+			"5": 0x208, "6": 0x20A, "7": 0x20C, "8": 0x20E,
+			"9": 0x210, "10": 0x212, "11": 0x214, "12": 0x216,
+			"13": 0x218, "14": 0x21A, "15": 0x21C, "16": 0x21E},
+		"B": {"1": 0x300, "2": 0x302, "3": 0x304, "4": 0x306,
+			"5": 0x308, "6": 0x30A, "7": 0x30C, "8": 0x30E},
 	}
 
-	startAddr := 0
-	switch group {
-	case "I":
-		startAddr = 0
-	case "EXT":
-		startAddr = 0x0100
-	case "P":
-		startAddr = 0x0200
-	case "B":
-		startAddr = 0x0300
-	default:
+	// проверяем наличие группы
+	if groupChannels, ok := channels[group]; ok {
+		// проверяем наличие канала в группе
+		if addr, ok := groupChannels[channel]; ok {
+			res = addr
+		} else {
+			return 0, fmt.Errorf("неверно введен канал: %q", channel)
+		}
+	} else {
 		return 0, fmt.Errorf("неверно введена группа: %q", group)
 	}
-
-	// преобразуем строку канала в int
-	iChannel, e := strconv.Atoi(channel)
-	// проверяем на ошибку и на то, что каналы не отрицательные
-	if e != nil || iChannel < 0 {
-		return 0, fmt.Errorf("не удается преобразовать строку канала (%q) в int", channel)
-	}
-
-	// проверка наличия канала по группе в карте channels,
-	// не выходит ли за пределы каналов и, после, расчет
-	if size, ok := channels[group]; ok && size >= iChannel {
-		numOfWords := 2 // количество слов (для интервала между адресами)
-		res = finalCalc(startAddr, iChannel, numOfWords)
-	} else {
-		return 0, fmt.Errorf("неверно введен канал: %q", channel)
-	}
-
 	return res, nil
 }
 
-func (b *Basis14) writeSingleCoil(group, channel string) (int, error) {
-	return -1, fmt.Errorf("функция не реализована")
+func (b *BasisPV) writeSingleCoil(group, channel string) (int, error) {
+	return 0, fmt.Errorf("пока не реализивано")
 }
-
-func (b *Basis14) writeSingleRegister(group, channel string) (int, error) {
-	return -1, fmt.Errorf("функция не реализована")
-}
-
-func (b *Basis14) writeMultipleRegister(group, channel string) (int, error) {
-	return -1, fmt.Errorf("функция не реализована")
+func (b *BasisPV) writeSingleRegister(group, channel string) (int, error) {
+	return 0, fmt.Errorf("пока не реализивано")
 }
