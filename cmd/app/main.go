@@ -2,25 +2,28 @@ package main
 
 import (
 	"bmacalc/internal/calc"
+	"bufio"
 	"fmt"
+	"os"
 )
 
 func main() {
-	var (
-		b  string
-		f  string
-		gr string
-		ch string
-	)
 
-	fmt.Scanf("%s %s %s %s", &b, &f, &gr, &ch)
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	query := scanner.Text()
 
-	device, err := calc.NewBasis(b)
+	basisType, mFunc, group, channel, err := calc.ParseString(query)
 	if err != nil {
 		panic(err)
 	}
 
-	if addr, err := device.CalcAddr(f, gr, ch); err == nil {
+	device, err := calc.NewBasis(basisType)
+	if err != nil {
+		panic(err)
+	}
+
+	if addr, err := device.CalcAddr(mFunc, group, channel); err == nil {
 		fmt.Printf("hex: %X, dec: %d\n", addr, addr)
 	} else {
 		fmt.Println(err)

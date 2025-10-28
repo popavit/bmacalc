@@ -1,6 +1,9 @@
 package calc
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // finalCalc вычисляет конечный адрес канала.
 //
@@ -49,4 +52,12 @@ func CalcAddr(b Basis, modbusFunc, group, channel string) (int, error) {
 	default:
 		return -1, fmt.Errorf("неизвестная функция: %q", modbusFunc)
 	}
+}
+
+func ParseString(query string) (b, f, gr, ch string, err error) {
+	parse := strings.Fields(query)
+	if len(parse) == 4 {
+		return parse[0], parse[1], parse[2], parse[3], nil
+	}
+	return "", "", "", "", fmt.Errorf("некорректный ввод запроса: %q", query)
 }
