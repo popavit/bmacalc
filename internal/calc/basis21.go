@@ -154,6 +154,19 @@ func (b *Basis21) readHoldingRegister(group, channel string) (res int, err error
 		} else {
 			return 0, fmt.Errorf("неверно введен канал: %q", channel)
 		}
+	case "P":
+		if iChannel, e := strconv.Atoi(channel); e == nil {
+			// расчетные каналы с 1 по 24
+			if iChannel > 0 && iChannel <= 24 {
+				startAddr := 0x8000
+				numOfWords := 2
+				return finalCalc(startAddr, iChannel, numOfWords), nil
+			} else {
+				return 0, fmt.Errorf("канал %q вне диапазона", channel)
+			}
+		} else {
+			return 0, fmt.Errorf("неверно указан канал %q", channel)
+		}
 	default:
 		return 0, fmt.Errorf("неверно введена группа: %q", group)
 	}

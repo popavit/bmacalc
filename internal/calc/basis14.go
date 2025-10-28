@@ -145,7 +145,11 @@ func (b *Basis14) readHoldingRegister(group, channel string) (res int, err error
 	case "HB":
 		startAddr = 0x9020
 	case "TIME":
-		return deviceTime[channel], nil
+		if addr, ok := deviceTime[channel]; ok {
+			return addr, nil
+		} else {
+			return 0, fmt.Errorf("неверно введен параметр %q", channel)
+		}
 	default:
 		return 0, fmt.Errorf("неверно введена группа %q", group)
 	}
