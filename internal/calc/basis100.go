@@ -125,15 +125,15 @@ func (b *Basis100) readHoldingRegister(group, channel string) (res int, err erro
 	case "AO":
 		startAddr = 0xD000
 		numOfGroups := 40 // количество групп
-		// переводим в int и проверяем номер группы на ошибку и на существование
-		if iChannel, err := strconv.Atoi(group[2:]); err == nil && iChannel > 0 && iChannel <= numOfGroups {
+		// переводим в int и проверяем номер группы на ошибку и на существование (c 1 по 40)
+		if groupNum, err := strconv.Atoi(group[2:]); err == nil && groupNum > 0 && groupNum <= numOfGroups {
 			numOfChannels := 8 // количество каналов
+			groupNum--         // смещаем на -1, так как расчет адреса 1, начинается с 0x0000
 			// переводим в int и проверяем номер канала на ошибку и на существование
 			if iChannel, err := strconv.Atoi(channel); err == nil && iChannel > 0 && iChannel <= numOfChannels {
-				intervalBetweenGroupe := 0x10 // интервал между группами
-				iChannel--                    // смещаем на -1, так как расчет адреса 1, начинается с 0x0000
+				intervalBetweenGroup := 0x10 // интервал между группами
 				// вычисляем адрес конкретной группы
-				groupAddr := startAddr + intervalBetweenGroupe*iChannel
+				groupAddr := startAddr + intervalBetweenGroup*groupNum
 				numOfWords := 2 // количество слов для интервала
 				return finalCalc(groupAddr, iChannel, numOfWords), nil
 			} else {
@@ -169,7 +169,7 @@ func (b *Basis100) readHoldingRegister(group, channel string) (res int, err erro
 			switch channel {
 			case "sysError":
 				return 0xFF11, nil
-			case "dubcation":
+			case "dublication":
 				return 0xFF12, nil
 			default:
 				return 0, fmt.Errorf("неверно введен параметр: %q", channel)
@@ -192,12 +192,18 @@ func (b *Basis100) readInputRegister(group, channel string) (int, error) {
 		return 0, fmt.Errorf("неверно введена группа: %q", group)
 	}
 
-	numOfGroups := 40
+	numOfGroups := 40 // количество групп
+	// переводим и проверяем номер группы на ошибку и на существование
 	if groupNum, err := strconv.Atoi(group[2:]); err == nil && groupNum > 0 && groupNum <= numOfGroups {
-		numOfChannels := 8
+		numOfChannels := 8 // количество каналов
+		// переводим и проверяем номер канала на ошибку и на существование
 		if iChannel, err := strconv.Atoi(channel); err == nil && iChannel > 0 && iChannel <= numOfChannels {
-			numOfWords := 2
-			return finalCalc(startAddr, iChannel, numOfWords), nil
+			intervalBetweenGroup := 0x10 // интервал между группами
+			groupNum--                   // смещаем на -1, так как расчет адреса 1, начинается с 0x0000
+			// вычисляем адрес конкретной группы
+			groupAddr := startAddr + intervalBetweenGroup*groupNum
+			numOfWords := 2 // количество слов для интервала
+			return finalCalc(groupAddr, iChannel, numOfWords), nil
 		} else {
 			return 0, fmt.Errorf("неверно введен канал: %q", channel)
 		}

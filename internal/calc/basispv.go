@@ -56,7 +56,7 @@ func (b *BasisPV) readDiscreteInput(group, channel string) (res int, err error) 
 	// преобразуем строку канала в int
 	iChannel, e := strconv.Atoi(channel)
 	// проверяем на ошибку и на то, что каналы не отрицательные
-	if e != nil && iChannel > 0 {
+	if e != nil || iChannel <= 0 {
 		return 0, fmt.Errorf("неверно введен канал: %q", channel)
 	}
 
@@ -76,7 +76,7 @@ func (b *BasisPV) readDiscreteInput(group, channel string) (res int, err error) 
 	default:
 		return 0, fmt.Errorf("неверно введена группа: %q", group)
 	}
-	return res, nil
+	return
 }
 
 func (b *BasisPV) readHoldingRegister(group, channel string) (res int, err error) {
@@ -158,7 +158,7 @@ func (b *BasisPV) readHoldingRegister(group, channel string) (res int, err error
 			return 0, fmt.Errorf("неверно введен канал (%q)", channel)
 		}
 	} else {
-		return 0, fmt.Errorf("не удалось преобразовать строку канала (%q) в int или отрицательный канал", channel)
+		return 0, fmt.Errorf("не удалось преобразовать строку канала (%q) в int или нулевой/отрицательный канал", channel)
 	}
 
 	return res, nil

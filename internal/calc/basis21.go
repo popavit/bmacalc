@@ -84,8 +84,8 @@ func (b *Basis21) readDiscreteInput(group, channel string) (res int, err error) 
 	// преобразуем строку channels в int
 	iChannel, err := strconv.Atoi(channel)
 	// проверяем на ошибку и, что канал не отрицательный
-	if err != nil || iChannel < 0 {
-		return 0, fmt.Errorf("не удается преобразовать строку канала (%q) в int или отрицательное значение", channel)
+	if err != nil || iChannel <= 0 {
+		return 0, fmt.Errorf("не удается преобразовать строку канала (%q) в int или нулевое/отрицательное значение", channel)
 	}
 	// проверка наличия канала по группе в карте channels, а после расчет
 	if size, ok := channels[group]; ok && size >= iChannel && iChannel > 0 {
@@ -218,6 +218,8 @@ func (b *Basis21) readInputRegister(group, channel string) (res int, err error) 
 		if i := slices.Index(orderChannelsI, group); i != -1 {
 			interval := 0x0020 // интервал между группами
 			startAddr = i * interval
+		} else {
+			return 0, fmt.Errorf("неверно введена группа: %q", group)
 		}
 	case "V1":
 		startAddr = 0x1000
@@ -234,18 +236,21 @@ func (b *Basis21) readInputRegister(group, channel string) (res int, err error) 
 			startAddr = 0xA000 // HI1
 			interval := 0x0480 // интервал между группами
 			startAddr += i * interval
+		} else {
+			return 0, fmt.Errorf("неверно введена группа: %q", group)
 		}
 	default:
 		return 0, fmt.Errorf("неверно введена группа: %q", group)
 	}
 
-	// проверка наличия канала по группе в списке каналов, а после расчет
-	if intChannel, e := strconv.Atoi(channel); e == nil {
-		if size, ok := channels[group]; ok && size >= intChannel && intChannel > 0 {
+	// перевод в int, проверка наличия канала по группе в списке каналов, а после расчет
+	if iChannel, e := strconv.Atoi(channel); e == nil {
+		if size, ok := channels[group]; ok && size >= iChannel && iChannel > 0 {
 			numOfWords := 2 // количество слов (для интервала между адресами)
-
-			res = finalCalc(startAddr, intChannel, numOfWords)
+			res = finalCalc(startAddr, iChannel, numOfWords)
 			// если нет, но есть в списке исторических каналов
+		} else {
+			return 0, fmt.Errorf("неверно введен канал: %q", channel)
 		}
 
 	} else if size, ok := channelsHI[group]; ok { // если данные часовые
@@ -255,7 +260,7 @@ func (b *Basis21) readInputRegister(group, channel string) (res int, err error) 
 		matches := re.FindStringSubmatch(channel)
 
 		if len(matches) == 4 {
-			intChannel, err = strconv.Atoi(matches[1])
+			iChannel, err = strconv.Atoi(matches[1])
 			if err != nil {
 				return 0, fmt.Errorf("в строке параметра (%q) неверно указан канал", channel)
 			}
@@ -279,8 +284,8 @@ func (b *Basis21) readInputRegister(group, channel string) (res int, err error) 
 			}
 
 			// если часы
-			if size >= intChannel && intChannel > 0 && hour >= 0 && hour < 24 {
-				res = finalCalc(startAddr, intChannel, 0x0090) + hour*2
+			if size >= iChannel && iChannel > 0 && hour >= 0 && hour < 24 {
+				res = finalCalc(startAddr, iChannel, 0x0090) + hour*2
 			} else {
 				return 0, fmt.Errorf("неверно указан параметр: %q", channel)
 			}
@@ -291,8 +296,7 @@ func (b *Basis21) readInputRegister(group, channel string) (res int, err error) 
 	} else {
 		return 0, fmt.Errorf("не удалось вычислить канал (%q) или неверно указана группа (%q)", channel, group)
 	}
-
-	return res, nil
+	return
 }
 
 func (b *Basis21) writeSingleCoil(group, channel string) (int, error) {

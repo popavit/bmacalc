@@ -28,7 +28,7 @@ func (b *Basis14) readCoil(group, channel string) (int, error) {
 func (b *Basis14) readDiscreteInput(group, channel string) (res int, err error) {
 	channels := map[string]int{
 		"I": 8, "F": 2,
-		"DI": 8, "EXTI": 12, "B": 8,
+		"DI": 8, "EXT": 12, "B": 8,
 		"P": 16, "W": 64,
 	}
 
@@ -44,7 +44,7 @@ func (b *Basis14) readDiscreteInput(group, channel string) (res int, err error) 
 	case "DI":
 		startAddr = 0x0200
 		// входные каналы на шине расширения
-	case "EXTI":
+	case "EXT":
 		startAddr = 0x0300
 		// расчетные каналы
 	case "P":
@@ -62,13 +62,13 @@ func (b *Basis14) readDiscreteInput(group, channel string) (res int, err error) 
 	// преобразуем строку канала в int и проверяем
 	iChannel, e := strconv.Atoi(channel)
 	// проверяем на ошибку и на то, что каналы не отрицательные
-	if e != nil || iChannel < 0 {
+	if e != nil || iChannel <= 0 {
 		return 0, fmt.Errorf("не удается преобразовать строку канала (%q) в int", channel)
 	}
 
 	// проверка наличия канала по всем группам, а после расчет
 	switch group {
-	case "I", "DI", "EXTI", "B", "P", "F", "W":
+	case "I", "DI", "EXT", "B", "P", "F", "W":
 		if size, ok := channels[group]; ok && size >= iChannel {
 			numOfBits := 16 // количество битов (для интервала) между адресами
 			// так как начинаем расчет с 0 адреса
@@ -123,6 +123,8 @@ func (b *Basis14) readHoldingRegister(group, channel string) (res int, err error
 	case "CLM":
 		if addr, ok := controlLoop[channel]; ok {
 			return addr, nil
+		} else {
+			return 0, fmt.Errorf("неверно введен параметр: %q", channel)
 		}
 	case "CLEXT":
 		// Во внешнем контуре нет режима работы и спец. алгоритмов
@@ -133,8 +135,9 @@ func (b *Basis14) readHoldingRegister(group, channel string) (res int, err error
 			shift := 0x1000 // смещение по адресу для внешнего контура
 			addr += shift
 			return addr, nil
+		} else {
+			return 0, fmt.Errorf("неверно введен параметр: %q", channel)
 		}
-
 	case "P":
 		startAddr = 0x8000
 	case "HI":
@@ -161,15 +164,14 @@ func (b *Basis14) readHoldingRegister(group, channel string) (res int, err error
 		// проверяем на наличие группы и размер группы
 		if size, ok := channels[group]; ok && size >= iChannel {
 			numOfWords := 2 // количество слов (для интервала между адресами)
-			res = finalCalc(startAddr, iChannel, numOfWords)
+			return finalCalc(startAddr, iChannel, numOfWords), nil
 		} else {
 			return 0, fmt.Errorf("неверно введен канал: %q", channel)
 		}
 	} else {
-		return 0, fmt.Errorf("не удалось преобразовать строку канала (%q) в int или отрицательный канал", channel)
+		return 0, fmt.Errorf("не удалось преобразовать строку канала (%q) в int или нулевой/отрицательный канал", channel)
 	}
 
-	return res, nil
 }
 
 func (b *Basis14) readInputRegister(group, channel string) (res int, err error) {
@@ -194,8 +196,8 @@ func (b *Basis14) readInputRegister(group, channel string) (res int, err error) 
 	// преобразуем строку канала в int
 	iChannel, e := strconv.Atoi(channel)
 	// проверяем на ошибку и на то, что каналы не отрицательные
-	if e != nil || iChannel < 0 {
-		return 0, fmt.Errorf("не удается преобразовать строку канала (%q) в int", channel)
+	if e != nil || iChannel <= 0 {
+		return 0, fmt.Errorf("не удается преобразовать строку канала (%q) в int или канал нулевой/отрицательный", channel)
 	}
 
 	// проверка наличия канала по группе в карте channels,
