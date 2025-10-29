@@ -22,7 +22,7 @@ func NewBasis(code string) (Basis, error) {
 	case "b21":
 		return &Basis21{}, nil
 	case "b100":
-		return nil, fmt.Errorf("устройство не реализовано") //&Basis100{}, nil
+		return &Basis100{}, nil
 	case "bpv":
 		return &BasisPV{}, nil
 	default:
