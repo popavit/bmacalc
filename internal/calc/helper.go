@@ -23,6 +23,19 @@ func finalCalc(startAddr int, channel int, interval int) (res int) {
 
 }
 
+// ParseString преобразует строку в 4 значения:
+//   - b  - тип БАЗИС
+//   - f  - функция Modbus
+//   - gr - группа
+//   - ch - канал
+func ParseString(query string) (b, f, gr, ch string, err error) {
+	parse := strings.Fields(query)
+	if len(parse) == 4 {
+		return parse[0], parse[1], parse[2], parse[3], nil
+	}
+	return "", "", "", "", fmt.Errorf("некорректный ввод запроса: %q", query)
+}
+
 // CalcAddr (конструкция) расчитывает Modbus адрес устройства в
 // зависимости от выбранной функции, группы и канала(названия параметра)
 //   - readCoil              = "f1"
@@ -54,10 +67,34 @@ func CalcAddr(b Basis, modbusFunc, group, channel string) (int, error) {
 	}
 }
 
-func ParseString(query string) (b, f, gr, ch string, err error) {
-	parse := strings.Fields(query)
-	if len(parse) == 4 {
-		return parse[0], parse[1], parse[2], parse[3], nil
+// getGroup выводит группы по запрошенной модбас функции
+func GetGroup(b Basis, modbusFunc string) ([]string, error) {
+	groups := b.mapGroup()
+
+	list, ok := groups[modbusFunc]
+	if !ok {
+		return nil, fmt.Errorf("модбас функция %s не найдена", modbusFunc)
 	}
-	return "", "", "", "", fmt.Errorf("некорректный ввод запроса: %q", query)
+	keys := make([]string, 0, len(list))
+	for k := range list {
+		keys = append(keys, k)
+	}
+
+	return keys, nil
+}
+
+// getChannel выводит группы по запрошенной модбас функции и группе
+func GetChannel(b Basis, modbusFunc, group string) ([]string, error) {
+	groups := b.mapGroup()
+
+	groupList, ok := groups[modbusFunc]
+	if !ok {
+		return nil, fmt.Errorf("модбас функция %s не найдена", modbusFunc)
+	}
+
+	if channelList, ok := groupList[group]; ok {
+		return channelList, nil
+	} else {
+		return nil, fmt.Errorf("группа %s не найдена", group)
+	}
 }

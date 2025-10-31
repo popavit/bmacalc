@@ -3,14 +3,17 @@ package calc
 import "fmt"
 
 type Basis interface {
-	CalcAddr(funcCode, group, channel string) (int, error)
 	readCoil(group, channel string) (int, error)
 	readDiscreteInput(group, channel string) (int, error)
 	readHoldingRegister(group, channel string) (int, error)
 	readInputRegister(group, channel string) (int, error)
 	writeSingleCoil(group, channel string) (int, error)
 	writeSingleRegister(group, channel string) (int, error)
-	//writeMultipleRegister(group, channel string) (int, error)
+	writeMultipleRegister(group, channel string) (int, error)
+	// returnGroup(modbusFunc string) ([]string, error)
+	// returnChannel(modbusFunc string) ([]string, error)
+
+	mapGroup() map[string]map[string][]string
 }
 
 func NewBasis(code string) (Basis, error) {

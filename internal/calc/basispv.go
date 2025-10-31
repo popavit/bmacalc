@@ -8,6 +8,20 @@ import (
 
 type BasisPV struct{}
 
+func (b *BasisPV) mapGroup() map[string]map[string][]string {
+
+	return map[string]map[string][]string{
+		"f1":  {},
+		"f2":  {},
+		"f3":  {},
+		"f4":  {},
+		"f5":  {},
+		"f6":  {},
+		"f16": {},
+	}
+
+}
+
 // CalcAddr расчитывает Modbus адрес устройства в
 // зависимости от выбранной функции, группы и канала(названия параметра)
 //   - readCoil              = "f1"
@@ -17,9 +31,6 @@ type BasisPV struct{}
 //   - writeSingleCoil       = "f5"
 //   - writeSingleRegister   = "f6"
 //   - writeMultipleRegister = "f16"
-func (b *BasisPV) CalcAddr(modbusFunc, group, channel string) (int, error) {
-	return CalcAddr(b, modbusFunc, group, channel)
-}
 
 func (b *BasisPV) readCoil(group, channel string) (int, error) {
 	return 0, fmt.Errorf("пока не реализивано")
@@ -195,4 +206,7 @@ func (b *BasisPV) writeSingleCoil(group, channel string) (int, error) {
 }
 func (b *BasisPV) writeSingleRegister(group, channel string) (int, error) {
 	return 0, fmt.Errorf("пока не реализивано")
+}
+func (b *BasisPV) writeMultipleRegister(group, channel string) (int, error) {
+	return 0, fmt.Errorf("функция не реализована")
 }

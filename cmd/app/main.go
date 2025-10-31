@@ -29,8 +29,11 @@ func main() {
 			fmt.Println("Ошибка:", err)
 			continue
 		}
+		groupList, _ := calc.GetGroup(device, mFunc)
+		groupChannels, _ := calc.GetChannel(device, mFunc, group)
+		fmt.Printf("Группы: %v\nКаналы у группы %q: %v\n", groupList, group, groupChannels)
 
-		if addr, err := device.CalcAddr(mFunc, group, channel); err == nil {
+		if addr, err := calc.CalcAddr(device, mFunc, group, channel); err == nil {
 			fmt.Printf("hex: %X, dec: %d\n\n", addr, addr)
 		} else {
 			fmt.Println("Ошибка:", err)
