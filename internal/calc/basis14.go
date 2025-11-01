@@ -8,30 +8,6 @@ import (
 
 type Basis14 struct{}
 
-func (b *Basis14) mapGroup() map[string]map[string][]string {
-
-	return map[string]map[string][]string{
-		"f1":  {},
-		"f2":  {},
-		"f3":  {},
-		"f4":  {},
-		"f5":  {},
-		"f6":  {},
-		"f16": {},
-	}
-
-}
-
-// CalcAddr расчитывает Modbus адрес устройства в
-// зависимости от выбранной функции, группы и канала(названия параметра)
-//   - readCoil              = "f1"
-//   - readDiscreteInput     = "f2"
-//   - readHoldingRegister   = "f3"
-//   - readInputRegister     = "f4"
-//   - writeSingleCoil       = "f5"
-//   - writeSingleRegister   = "f6"
-//   - writeMultipleRegister = "f16"
-
 func (b *Basis14) readCoil(group, channel string) (int, error) {
 	return -1, fmt.Errorf("функция не реализована")
 }
