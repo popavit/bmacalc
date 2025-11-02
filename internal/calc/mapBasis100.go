@@ -55,6 +55,7 @@ func (b *Basis100) mapGroup() map[string]map[string][]string {
 		}
 	}
 
+	// CL и AO в 3 функции Modbus
 	for _, group := range []string{"CL", "AO"} {
 		items := []string{}
 		numOfGroups := 0
@@ -80,9 +81,21 @@ func (b *Basis100) mapGroup() map[string]map[string][]string {
 			res["f3"][fmt.Sprintf("%s%d", group, i)] = items
 		}
 	}
-	//256 таблиц в f3
+
+	// 256 таблиц в f3
 	for i := 1; i <= 256; i++ {
 		res["f3"]["TBL"] = append(res["f3"]["TBL"], strconv.Itoa(i))
+	}
+
+	// 4 функция Modbus
+	groupCount := 40
+	for i := 1; i <= groupCount; i++ {
+		items := []string{
+			"1", "2", "3", "4",
+			"5", "6", "7", "8",
+		}
+		res["f4"][fmt.Sprintf("AI%d", i)] = items
+		res["f4"][fmt.Sprintf("AO%d", i)] = items
 	}
 
 	return res
