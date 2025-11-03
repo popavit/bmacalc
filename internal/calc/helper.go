@@ -1,11 +1,12 @@
 package calc
 
 import (
-	"fmt"
-	"strings"
+    "fmt"
+    "sort"
+    "strings"
 )
 
-// finalCalc вычисляет конечный адрес канала.
+// computeAddress вычисляет конечный адрес канала.
 //
 // Параметры:
 //   - startAddr: базовый адрес начала группы.
@@ -14,7 +15,7 @@ import (
 //
 // Возвращает:
 //   - Итоговый вычисленный адрес (int).
-func finalCalc(startAddr int, channel int, interval int) (res int) {
+func computeAddress(startAddr int, channel int, interval int) (res int) {
 	// так как начинаем расчет с 0 адреса, к примеру:
 	// для канала AI1.1 адрес будет 0 * interval,
 	// а для AI1.2 будет 1 * interval
@@ -67,6 +68,19 @@ func CalcAddr(b Basis, modbusFunc, group, channel string) (int, error) {
 	}
 }
 
+// addrFromGroupMap выбирает адрес из карты вида map[group]map[channel]int
+func addrFromGroupMap(m map[string]map[string]int, group, channel string) (int, error) {
+    groupMap, ok := m[group]
+    if !ok {
+        return 0, fmt.Errorf("неверно введена группа: %q", group)
+    }
+    addr, ok := groupMap[channel]
+    if !ok {
+        return 0, fmt.Errorf("неверно введен канал: %q", channel)
+    }
+    return addr, nil
+}
+
 // getGroup выводит группы по запрошенной модбас функции
 func GetGroup(b Basis, modbusFunc string) ([]string, error) {
 	groups := b.mapGroup()
@@ -80,10 +94,11 @@ func GetGroup(b Basis, modbusFunc string) ([]string, error) {
 		keys = append(keys, k)
 	}
 
-	return keys, nil
+    sort.Strings(keys)
+    return keys, nil
 }
 
-// getChannel выводит группы по запрошенной модбас функции и группе
+// getChannel выводит каналы по запрошенной модбас функции и группе
 func GetChannel(b Basis, modbusFunc, group string) ([]string, error) {
 	groups := b.mapGroup()
 
@@ -92,8 +107,11 @@ func GetChannel(b Basis, modbusFunc, group string) ([]string, error) {
 		return nil, fmt.Errorf("модбас функция %s не найдена", modbusFunc)
 	}
 
-	if channelList, ok := groupList[group]; ok {
-		return channelList, nil
+    if channelList, ok := groupList[group]; ok {
+        out := make([]string, len(channelList))
+        copy(out, channelList)
+        sort.Strings(out)
+        return out, nil
 	} else {
 		return nil, fmt.Errorf("группа %s не найдена", group)
 	}

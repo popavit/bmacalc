@@ -56,13 +56,9 @@ func (b *Basis14) readDiscreteInput(group, channel string) (res int, err error) 
 	// проверка наличия канала по всем группам, а после расчет
 	switch group {
 	case "I", "DI", "EXT", "B", "P", "F", "W":
-		if size, ok := channels[group]; ok && size >= iChannel {
-			numOfBits := 16 // количество битов (для интервала) между адресами
-			// так как начинаем расчет с 0 адреса
-			// пример: группа I4 - startAddr = (h:0x0300|d:768)
-			// канал 8; получаем расчет:
-			// (0x0300|d:768) + (h:0x0040|d:8*8=64) = (h:0x0340|d:832)
-			res = finalCalc(startAddr, iChannel, numOfBits)
+        if size, ok := channels[group]; ok && size >= iChannel {
+            numOfBits := 16 // количество битов (для интервала) между адресами
+            res = computeAddress(startAddr, iChannel, numOfBits)
 		} else {
 			return 0, fmt.Errorf("неверно введен канал: %q", channel)
 		}
@@ -150,8 +146,8 @@ func (b *Basis14) readHoldingRegister(group, channel string) (res int, err error
 	if iChannel, e := strconv.Atoi(channel); e == nil && iChannel > 0 {
 		// проверяем на наличие группы и размер группы
 		if size, ok := channels[group]; ok && size >= iChannel {
-			numOfWords := 2 // количество слов (для интервала между адресами)
-			return finalCalc(startAddr, iChannel, numOfWords), nil
+            numOfWords := 2 // количество слов (для интервала между адресами)
+            return computeAddress(startAddr, iChannel, numOfWords), nil
 		} else {
 			return 0, fmt.Errorf("неверно введен канал: %q", channel)
 		}
@@ -190,8 +186,8 @@ func (b *Basis14) readInputRegister(group, channel string) (res int, err error) 
 	// проверка наличия канала по группе в карте channels,
 	// не выходит ли за пределы каналов и, после, расчет
 	if size, ok := channels[group]; ok && size >= iChannel {
-		numOfWords := 2 // количество слов (для интервала между адресами)
-		res = finalCalc(startAddr, iChannel, numOfWords)
+        numOfWords := 2 // количество слов (для интервала между адресами)
+        res = computeAddress(startAddr, iChannel, numOfWords)
 	} else {
 		return 0, fmt.Errorf("неверно введен канал: %q", channel)
 	}

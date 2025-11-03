@@ -9,7 +9,7 @@ import (
 type BasisPV struct{}
 
 func (b *BasisPV) readCoil(group, channel string) (int, error) {
-	return 0, fmt.Errorf("пока не реализивано")
+    return 0, fmt.Errorf("пока не реализовано")
 }
 
 func (b *BasisPV) readDiscreteInput(group, channel string) (res int, err error) {
@@ -50,13 +50,9 @@ func (b *BasisPV) readDiscreteInput(group, channel string) (res int, err error) 
 	// проверка наличия канала по всем группам, а после расчет
 	switch group {
 	case "I", "DI", "EI", "B", "P", "F", "W":
-		if size, ok := channels[group]; ok && size >= iChannel {
-			numOfBits := 16 // количество битов (для интервала) между адресами
-			// так как начинаем расчет с 0 адреса
-			// пример: группа I4 - startAddr = (h:0x0300|d:768)
-			// канал 8; получаем расчет:
-			// (0x0300|d:768) + (h:0x0040|d:8*8=64) = (h:0x0340|d:832)
-			res = finalCalc(startAddr, iChannel, numOfBits)
+        if size, ok := channels[group]; ok && size >= iChannel {
+            numOfBits := 16 // количество битов (для интервала) между адресами
+            res = computeAddress(startAddr, iChannel, numOfBits)
 		} else {
 			return 0, fmt.Errorf("неверно введен канал: %q", channel)
 		}
@@ -136,11 +132,11 @@ func (b *BasisPV) readHoldingRegister(group, channel string) (res int, err error
 
 	// преобразуем строку channel в int
 	// проверяем на ошибку и на то, что каналы не отрицательные
-	if iChannel, e := strconv.Atoi(channel); e == nil && iChannel > 0 {
+    if iChannel, e := strconv.Atoi(channel); e == nil && iChannel > 0 {
 		// проверяем на наличие группы и размер группы
 		if size, ok := channels[group]; ok && size >= iChannel {
-			numOfWords := 2 // количество слов (для интервала между адресами)
-			res = finalCalc(startAddr, iChannel, numOfWords)
+            numOfWords := 2 // количество слов (для интервала между адресами)
+            res = computeAddress(startAddr, iChannel, numOfWords)
 		} else {
 			return 0, fmt.Errorf("неверно введен канал (%q)", channel)
 		}
@@ -178,10 +174,10 @@ func (b *BasisPV) readInputRegister(group, channel string) (res int, err error) 
 }
 
 func (b *BasisPV) writeSingleCoil(group, channel string) (int, error) {
-	return 0, fmt.Errorf("пока не реализивано")
+    return 0, fmt.Errorf("пока не реализовано")
 }
 func (b *BasisPV) writeSingleRegister(group, channel string) (int, error) {
-	return 0, fmt.Errorf("пока не реализивано")
+    return 0, fmt.Errorf("пока не реализовано")
 }
 func (b *BasisPV) writeMultipleRegister(group, channel string) (int, error) {
 	return 0, fmt.Errorf("функция не реализована")

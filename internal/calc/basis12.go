@@ -9,7 +9,7 @@ import (
 type Basis12 struct{}
 
 func (b *Basis12) readCoil(group, channel string) (int, error) {
-	return 0, fmt.Errorf("пока не реализивано")
+	return 0, fmt.Errorf("пока не реализовано")
 }
 
 func (b *Basis12) readDiscreteInput(group, channel string) (res int, err error) {
@@ -23,18 +23,7 @@ func (b *Basis12) readDiscreteInput(group, channel string) (res int, err error) 
 			"7": 0x0120, "8": 0x0128, "3B": 0x0130},
 	}
 
-	// проверяем наличие группы
-	if groupChannels, ok := channels[group]; ok {
-		// проверяем наличие канала в группе
-		if addr, ok := groupChannels[channel]; ok {
-			res = addr
-		} else {
-			return 0, fmt.Errorf("неверно введен канал: %q", channel)
-		}
-	} else {
-		return 0, fmt.Errorf("неверно введена группа: %q", group)
-	}
-	return res, nil
+	return addrFromGroupMap(channels, group, channel)
 }
 
 func (b *Basis12) readHoldingRegister(group, channel string) (res int, err error) {
@@ -97,7 +86,7 @@ func (b *Basis12) readHoldingRegister(group, channel string) (res int, err error
 			if iChannel > 0 && iChannel <= 3 {
 				startAddr := 0x8000
 				numOfWords := 2
-				return finalCalc(startAddr, iChannel, numOfWords), nil
+				return computeAddress(startAddr, iChannel, numOfWords), nil
 			} else {
 				return 0, fmt.Errorf("канал вне диапазона: %q", channel)
 			}
@@ -124,25 +113,14 @@ func (b *Basis12) readInputRegister(group, channel string) (res int, err error) 
 		"P": {"1": 0x0030, "2": 0x0032, "3": 0x0034},
 	}
 
-	// проверяем наличие группы
-	if groupChannels, ok := channels[group]; ok {
-		// проверяем наличие канала в группе
-		if addr, ok := groupChannels[channel]; ok {
-			res = addr
-		} else {
-			return 0, fmt.Errorf("неверно введен канал: %q", channel)
-		}
-	} else {
-		return 0, fmt.Errorf("неверно введена группа: %q", group)
-	}
-	return res, nil
+	return addrFromGroupMap(channels, group, channel)
 }
 
 func (b *Basis12) writeSingleCoil(group, channel string) (int, error) {
-	return 0, fmt.Errorf("пока не реализивано")
+	return 0, fmt.Errorf("пока не реализовано")
 }
 func (b *Basis12) writeSingleRegister(group, channel string) (int, error) {
-	return 0, fmt.Errorf("пока не реализивано")
+	return 0, fmt.Errorf("пока не реализовано")
 }
 
 func (b *Basis12) writeMultipleRegister(group, channel string) (int, error) {

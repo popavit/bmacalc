@@ -75,12 +75,9 @@ func (b *Basis21) readDiscreteInput(group, channel string) (res int, err error) 
 		return 0, fmt.Errorf("не удается преобразовать строку канала (%q) в int или нулевое/отрицательное значение", channel)
 	}
 	// проверка наличия канала по группе в карте channels, а после расчет
-	if size, ok := channels[group]; ok && size >= iChannel && iChannel > 0 {
-		numOfBits := 8 // количество битов (для интервала) между адресами
-		// пример: группа I4 - startAddr = (h:0x0300|d:768)
-		// канал 8; получаем расчет:
-		// (0x0300|d:768) + (h:0x0040|d:8*8=64) = (h:0x0340|d:832)
-		res = finalCalc(startAddr, iChannel, numOfBits)
+    if size, ok := channels[group]; ok && size >= iChannel && iChannel > 0 {
+        numOfBits := 8 // количество битов (для интервала) между адресами
+        res = computeAddress(startAddr, iChannel, numOfBits)
 	} else {
 		return 0, fmt.Errorf("неверно введены группа и/или канал")
 	}
@@ -126,7 +123,7 @@ func (b *Basis21) readHoldingRegister(group, channel string) (res int, err error
 	switch group {
 	case "CL1", "CL2", "CL3", "CL4",
 		"CL5", "CL6", "CL7", "CL8":
-		if i := slices.Index(controlLoopList, group); i != 1 {
+		if i := slices.Index(controlLoopList, group); i != -1 {
 			// по выбраному контуру регулирования, параметру
 			// и промежутку между адресами считаем адрес
 			interval := 0x1000
@@ -147,8 +144,8 @@ func (b *Basis21) readHoldingRegister(group, channel string) (res int, err error
 			// расчетные каналы с 1 по 24
 			if iChannel > 0 && iChannel <= 24 {
 				startAddr := 0x8000
-				numOfWords := 2
-				return finalCalc(startAddr, iChannel, numOfWords), nil
+            numOfWords := 2
+            return computeAddress(startAddr, iChannel, numOfWords), nil
 			} else {
 				return 0, fmt.Errorf("канал %q вне диапазона", channel)
 			}
@@ -234,7 +231,7 @@ func (b *Basis21) readInputRegister(group, channel string) (res int, err error) 
 	if iChannel, e := strconv.Atoi(channel); e == nil {
 		if size, ok := channels[group]; ok && size >= iChannel && iChannel > 0 {
 			numOfWords := 2 // количество слов (для интервала между адресами)
-			res = finalCalc(startAddr, iChannel, numOfWords)
+			res = computeAddress(startAddr, iChannel, numOfWords)
 			// если нет, но есть в списке исторических каналов
 		} else {
 			return 0, fmt.Errorf("неверно введен канал: %q", channel)
@@ -272,7 +269,7 @@ func (b *Basis21) readInputRegister(group, channel string) (res int, err error) 
 
 			// если часы
 			if size >= iChannel && iChannel > 0 && hour >= 0 && hour < 24 {
-				res = finalCalc(startAddr, iChannel, 0x0090) + hour*2
+				res = computeAddress(startAddr, iChannel, 0x0090) + hour*2
 			} else {
 				return 0, fmt.Errorf("неверно указан параметр: %q", channel)
 			}
