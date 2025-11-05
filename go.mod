@@ -1,3 +1,3 @@
-module github.com/popavit/bmacalc
+module github.com/popavit/dmacalc
 
 go 1.25

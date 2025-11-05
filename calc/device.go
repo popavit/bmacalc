@@ -1,8 +1,10 @@
 package calc
 
-import "fmt"
+import (
+	"fmt"
+)
 
-type Basis interface {
+type Device interface {
 	readCoil(group, channel string) (int, error)
 	readDiscreteInput(group, channel string) (int, error)
 	readHoldingRegister(group, channel string) (int, error)
@@ -10,13 +12,10 @@ type Basis interface {
 	writeSingleCoil(group, channel string) (int, error)
 	writeSingleRegister(group, channel string) (int, error)
 	writeMultipleRegister(group, channel string) (int, error)
-	// returnGroup(modbusFunc string) ([]string, error)
-	// returnChannel(modbusFunc string) ([]string, error)
-
 	mapGroup() map[string]map[string][]string
 }
 
-func NewBasis(code string) (Basis, error) {
+func NewDevice(code string) (Device, error) {
 	switch code {
 	case "b12":
 		return &Basis12{}, nil

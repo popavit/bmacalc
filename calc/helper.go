@@ -1,9 +1,9 @@
 package calc
 
 import (
-    "fmt"
-    "sort"
-    "strings"
+	"fmt"
+	"sort"
+	"strings"
 )
 
 // computeAddress вычисляет конечный адрес канала.
@@ -46,7 +46,7 @@ func ParseString(query string) (b, f, gr, ch string, err error) {
 //   - writeSingleCoil       = "f5"
 //   - writeSingleRegister   = "f6"
 //   - writeMultipleRegister = "f16"
-func CalcAddr(b Basis, modbusFunc, group, channel string) (int, error) {
+func CalcAddr(b Device, modbusFunc, group, channel string) (int, error) {
 
 	switch modbusFunc {
 	case "f1":
@@ -70,19 +70,19 @@ func CalcAddr(b Basis, modbusFunc, group, channel string) (int, error) {
 
 // addrFromGroupMap выбирает адрес из карты вида map[group]map[channel]int
 func addrFromGroupMap(m map[string]map[string]int, group, channel string) (int, error) {
-    groupMap, ok := m[group]
-    if !ok {
-        return 0, fmt.Errorf("неверно введена группа: %q", group)
-    }
-    addr, ok := groupMap[channel]
-    if !ok {
-        return 0, fmt.Errorf("неверно введен канал: %q", channel)
-    }
-    return addr, nil
+	groupMap, ok := m[group]
+	if !ok {
+		return 0, fmt.Errorf("неверно введена группа: %q", group)
+	}
+	addr, ok := groupMap[channel]
+	if !ok {
+		return 0, fmt.Errorf("неверно введен канал: %q", channel)
+	}
+	return addr, nil
 }
 
 // getGroup выводит группы по запрошенной модбас функции
-func GetGroup(b Basis, modbusFunc string) ([]string, error) {
+func GetGroup(b Device, modbusFunc string) ([]string, error) {
 	groups := b.mapGroup()
 
 	list, ok := groups[modbusFunc]
@@ -94,12 +94,12 @@ func GetGroup(b Basis, modbusFunc string) ([]string, error) {
 		keys = append(keys, k)
 	}
 
-    sort.Strings(keys)
-    return keys, nil
+	sort.Strings(keys)
+	return keys, nil
 }
 
 // getChannel выводит каналы по запрошенной модбас функции и группе
-func GetChannel(b Basis, modbusFunc, group string) ([]string, error) {
+func GetChannel(b Device, modbusFunc, group string) ([]string, error) {
 	groups := b.mapGroup()
 
 	groupList, ok := groups[modbusFunc]
@@ -107,11 +107,11 @@ func GetChannel(b Basis, modbusFunc, group string) ([]string, error) {
 		return nil, fmt.Errorf("модбас функция %s не найдена", modbusFunc)
 	}
 
-    if channelList, ok := groupList[group]; ok {
-        out := make([]string, len(channelList))
-        copy(out, channelList)
-        sort.Strings(out)
-        return out, nil
+	if channelList, ok := groupList[group]; ok {
+		out := make([]string, len(channelList))
+		copy(out, channelList)
+		sort.Strings(out)
+		return out, nil
 	} else {
 		return nil, fmt.Errorf("группа %s не найдена", group)
 	}

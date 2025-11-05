@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/popavit/bmacalc/calc"
+	"github.com/popavit/dmacalc/calc"
 )
 
 func main() {
@@ -25,7 +25,7 @@ func main() {
 			continue
 		}
 
-		device, err := calc.NewBasis(basisType)
+		device, err := calc.NewDevice(basisType)
 		if err != nil {
 			fmt.Println("Ошибка:", err)
 			continue

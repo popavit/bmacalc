@@ -1,6 +1,8 @@
 package calc
 
-import "strconv"
+import (
+	"strconv"
+)
 
 func (b *BasisPV) mapGroup() map[string]map[string][]string {
 
