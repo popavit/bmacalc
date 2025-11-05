@@ -1,10 +1,11 @@
 package main
 
 import (
-	"bmacalc/internal/calc"
 	"bufio"
 	"fmt"
 	"os"
+
+	"github.com/popavit/bmacalc/calc"
 )
 
 func main() {
