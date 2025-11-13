@@ -13,6 +13,7 @@ type Device interface {
 	writeSingleRegister(group, channel string) (int, error)
 	writeMultipleRegister(group, channel string) (int, error)
 	mapGroup() map[string]map[string][]string
+	GetHistory(group, chanAndDay string) ([]int, error)
 }
 
 func NewDevice(code string) (Device, error) {

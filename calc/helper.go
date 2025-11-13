@@ -25,11 +25,11 @@ func computeAddress(startAddr int, channel int, interval int) (res int) {
 }
 
 // ParseString преобразует строку в 4 значения:
-//   - b  - тип БАЗИС
+//   - d  - устройство
 //   - f  - функция Modbus
 //   - gr - группа
 //   - ch - канал
-func ParseString(query string) (b, f, gr, ch string, err error) {
+func ParseString(query string) (d, f, gr, ch string, err error) {
 	parse := strings.Fields(query)
 	if len(parse) == 4 {
 		return parse[0], parse[1], parse[2], parse[3], nil
@@ -82,8 +82,8 @@ func addrFromGroupMap(m map[string]map[string]int, group, channel string) (int, 
 }
 
 // getGroup выводит группы по запрошенной модбас функции
-func GetGroup(b Device, modbusFunc string) ([]string, error) {
-	groups := b.mapGroup()
+func GetGroup(d Device, modbusFunc string) ([]string, error) {
+	groups := d.mapGroup()
 
 	list, ok := groups[modbusFunc]
 	if !ok {
@@ -99,8 +99,8 @@ func GetGroup(b Device, modbusFunc string) ([]string, error) {
 }
 
 // getChannel выводит каналы по запрошенной модбас функции и группе
-func GetChannel(b Device, modbusFunc, group string) ([]string, error) {
-	groups := b.mapGroup()
+func GetChannel(d Device, modbusFunc, group string) ([]string, error) {
+	groups := d.mapGroup()
 
 	groupList, ok := groups[modbusFunc]
 	if !ok {

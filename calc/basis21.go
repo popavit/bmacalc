@@ -75,9 +75,9 @@ func (b *Basis21) readDiscreteInput(group, channel string) (res int, err error) 
 		return 0, fmt.Errorf("не удается преобразовать строку канала (%q) в int или нулевое/отрицательное значение", channel)
 	}
 	// проверка наличия канала по группе в карте channels, а после расчет
-    if size, ok := channels[group]; ok && size >= iChannel && iChannel > 0 {
-        numOfBits := 8 // количество битов (для интервала) между адресами
-        res = computeAddress(startAddr, iChannel, numOfBits)
+	if size, ok := channels[group]; ok && size >= iChannel && iChannel > 0 {
+		numOfBits := 8 // количество битов (для интервала) между адресами
+		res = computeAddress(startAddr, iChannel, numOfBits)
 	} else {
 		return 0, fmt.Errorf("неверно введены группа и/или канал")
 	}
@@ -144,8 +144,8 @@ func (b *Basis21) readHoldingRegister(group, channel string) (res int, err error
 			// расчетные каналы с 1 по 24
 			if iChannel > 0 && iChannel <= 24 {
 				startAddr := 0x8000
-            numOfWords := 2
-            return computeAddress(startAddr, iChannel, numOfWords), nil
+				numOfWords := 2
+				return computeAddress(startAddr, iChannel, numOfWords), nil
 			} else {
 				return 0, fmt.Errorf("канал %q вне диапазона", channel)
 			}
@@ -293,4 +293,25 @@ func (b *Basis21) writeSingleRegister(group, channel string) (int, error) {
 
 func (b *Basis21) writeMultipleRegister(group, channel string) (int, error) {
 	return -1, fmt.Errorf("функция не реализована")
+}
+
+// GetHistory выводит список адресов для чтения хоз. учета за день
+//
+//	chanAndDay - формат записи <канал><t/y/b>, где:
+//		t - сегодня;
+//		y - вчера;
+//		b - позавчера.
+func (b *Basis21) GetHistory(group, chanAndDay string) (res []int, err error) {
+
+	// За день (с 0 по 23 час)
+	for i := 0; i <= 23; i++ {
+		//получаем адрес
+		if address, err := b.readInputRegister(group, chanAndDay+strconv.Itoa(i)); err == nil {
+			res = append(res, address)
+		} else {
+			return nil, err
+		}
+
+	}
+	return res, nil
 }

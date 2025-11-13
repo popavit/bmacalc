@@ -126,3 +126,7 @@ func (b *Basis12) writeSingleRegister(group, channel string) (int, error) {
 func (b *Basis12) writeMultipleRegister(group, channel string) (int, error) {
 	return 0, fmt.Errorf("функция не реализована")
 }
+
+func (b *Basis12) GetHistory(group, chanAndDay string) ([]int, error) {
+	return nil, fmt.Errorf("данный тип устройства не поддерживает хоз.учета")
+}

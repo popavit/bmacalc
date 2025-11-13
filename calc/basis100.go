@@ -8,7 +8,7 @@ import (
 type Basis100 struct{}
 
 func (b *Basis100) readCoil(group, channel string) (int, error) {
-    return 0, fmt.Errorf("пока не реализовано")
+	return 0, fmt.Errorf("пока не реализовано")
 }
 
 func (b *Basis100) readDiscreteInput(group, channel string) (int, error) {
@@ -42,7 +42,7 @@ func (b *Basis100) readDiscreteInput(group, channel string) (int, error) {
 					numOfBits := 8                // количество битов
 					groupNum--                    // смещаем на -1, так как расчет адреса 1, начинается с 0x0000
 					// возвращаем адрес
-                    return computeAddress(startAddr+groupNum*intervalBetweenGroup, iChannel, numOfBits), nil
+					return computeAddress(startAddr+groupNum*intervalBetweenGroup, iChannel, numOfBits), nil
 				} else {
 					return 0, fmt.Errorf("неверно введен канал: %q", channel)
 				}
@@ -122,7 +122,7 @@ func (b *Basis100) readHoldingRegister(group, channel string) (res int, err erro
 				// вычисляем адрес конкретной группы
 				groupAddr := startAddr + intervalBetweenGroup*groupNum
 				numOfWords := 2 // количество слов для интервала
-                return computeAddress(groupAddr, iChannel, numOfWords), nil
+				return computeAddress(groupAddr, iChannel, numOfWords), nil
 			} else {
 				return 0, fmt.Errorf("неверно введен канал: %q", channel)
 			}
@@ -141,7 +141,7 @@ func (b *Basis100) readHoldingRegister(group, channel string) (res int, err erro
 			// переводим в int и проверяем номер таблицы на ошибку и на существование
 			if tblNum, err := strconv.Atoi(channel); err == nil && tblNum > 0 && tblNum <= numOfTbl {
 				numOfWords := 2 // количество слов для интервала
-                return computeAddress(startAddr, tblNum, numOfWords), nil
+				return computeAddress(startAddr, tblNum, numOfWords), nil
 			} else {
 				return 0, fmt.Errorf("неверно введен номер таблицы: %q", channel)
 			}
@@ -190,7 +190,7 @@ func (b *Basis100) readInputRegister(group, channel string) (int, error) {
 			// вычисляем адрес конкретной группы
 			groupAddr := startAddr + intervalBetweenGroup*groupNum
 			numOfWords := 2 // количество слов для интервала
-            return computeAddress(groupAddr, iChannel, numOfWords), nil
+			return computeAddress(groupAddr, iChannel, numOfWords), nil
 		} else {
 			return 0, fmt.Errorf("неверно введен канал: %q", channel)
 		}
@@ -200,12 +200,16 @@ func (b *Basis100) readInputRegister(group, channel string) (int, error) {
 }
 
 func (b *Basis100) writeSingleCoil(group, channel string) (int, error) {
-    return 0, fmt.Errorf("пока не реализовано")
+	return 0, fmt.Errorf("пока не реализовано")
 }
 func (b *Basis100) writeSingleRegister(group, channel string) (int, error) {
-    return 0, fmt.Errorf("пока не реализовано")
+	return 0, fmt.Errorf("пока не реализовано")
 }
 
 func (b *Basis100) writeMultipleRegister(group, channel string) (int, error) {
 	return 0, fmt.Errorf("функция не реализована")
+}
+
+func (b *Basis100) GetHistory(group, chanAndDay string) ([]int, error) {
+	return nil, fmt.Errorf("данный тип устройства не поддерживает хоз.учета")
 }

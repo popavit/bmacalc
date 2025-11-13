@@ -56,9 +56,9 @@ func (b *Basis14) readDiscreteInput(group, channel string) (res int, err error) 
 	// проверка наличия канала по всем группам, а после расчет
 	switch group {
 	case "I", "DI", "EXT", "B", "P", "F", "W":
-        if size, ok := channels[group]; ok && size >= iChannel {
-            numOfBits := 16 // количество битов (для интервала) между адресами
-            res = computeAddress(startAddr, iChannel, numOfBits)
+		if size, ok := channels[group]; ok && size >= iChannel {
+			numOfBits := 16 // количество битов (для интервала) между адресами
+			res = computeAddress(startAddr, iChannel, numOfBits)
 		} else {
 			return 0, fmt.Errorf("неверно введен канал: %q", channel)
 		}
@@ -146,8 +146,8 @@ func (b *Basis14) readHoldingRegister(group, channel string) (res int, err error
 	if iChannel, e := strconv.Atoi(channel); e == nil && iChannel > 0 {
 		// проверяем на наличие группы и размер группы
 		if size, ok := channels[group]; ok && size >= iChannel {
-            numOfWords := 2 // количество слов (для интервала между адресами)
-            return computeAddress(startAddr, iChannel, numOfWords), nil
+			numOfWords := 2 // количество слов (для интервала между адресами)
+			return computeAddress(startAddr, iChannel, numOfWords), nil
 		} else {
 			return 0, fmt.Errorf("неверно введен канал: %q", channel)
 		}
@@ -186,8 +186,8 @@ func (b *Basis14) readInputRegister(group, channel string) (res int, err error) 
 	// проверка наличия канала по группе в карте channels,
 	// не выходит ли за пределы каналов и, после, расчет
 	if size, ok := channels[group]; ok && size >= iChannel {
-        numOfWords := 2 // количество слов (для интервала между адресами)
-        res = computeAddress(startAddr, iChannel, numOfWords)
+		numOfWords := 2 // количество слов (для интервала между адресами)
+		res = computeAddress(startAddr, iChannel, numOfWords)
 	} else {
 		return 0, fmt.Errorf("неверно введен канал: %q", channel)
 	}
@@ -205,4 +205,8 @@ func (b *Basis14) writeSingleRegister(group, channel string) (int, error) {
 
 func (b *Basis14) writeMultipleRegister(group, channel string) (int, error) {
 	return -1, fmt.Errorf("функция не реализована")
+}
+
+func (b *Basis14) GetHistory(group, chanAndDay string) ([]int, error) {
+	return nil, fmt.Errorf("пока не реализовано")
 }
